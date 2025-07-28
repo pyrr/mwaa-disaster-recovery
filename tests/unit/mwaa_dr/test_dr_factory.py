@@ -19,28 +19,35 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 from unittest.mock import patch
 from sure import expect
+from mwaa_dr.framework.factory.default_dag_factory import DefaultDagFactory
+from mwaa_dr.v_2_4.dr_factory import DRFactory_2_4
+from mwaa_dr.v_2_5.dr_factory import DRFactory_2_5
+from mwaa_dr.v_2_6.dr_factory import DRFactory_2_6
+from mwaa_dr.v_2_7.dr_factory import DRFactory_2_7
+from mwaa_dr.v_2_8.dr_factory import DRFactory_2_8
+from mwaa_dr.v_2_9.dr_factory import DRFactory_2_9
+from mwaa_dr.v_2_10.dr_factory import DRFactory_2_10
 from mwaa_dr import dr_factory
 import importlib
+import pytest
 
 
 class TestDRFactory:
-    def test_factory_on_airflow_v_2_9_2(self):
-        with patch("airflow.version.version", "2.9.2"):
+    @pytest.mark.parametrize(
+        "airflow_version,factory_module",
+        [
+            ("-1", DefaultDagFactory),
+            ("2.4.0", DRFactory_2_4),
+            ("2.5.0", DRFactory_2_5),
+            ("2.6.0", DRFactory_2_6),
+            ("2.7.0", DRFactory_2_7),
+            ("2.8.0", DRFactory_2_8),
+            ("2.9.0", DRFactory_2_9),
+            ("2.10.0", DRFactory_2_10),
+        ],
+    )
+    def test_factory_matches_version(self, airflow_version, factory_module):
+        with patch("airflow.version.version", airflow_version):
             importlib.reload(dr_factory)
-            from mwaa_dr.v_2_9.dr_factory import DRFactory_2_9
 
-            expect(dr_factory.DRFactory).to.equal(DRFactory_2_9)
-
-    def test_factory_on_airflow_v_2_10_3(self):
-        with patch("airflow.version.version", "2.10.3"):
-            importlib.reload(dr_factory)
-            from mwaa_dr.v_2_10.dr_factory import DRFactory_2_10
-
-            expect(dr_factory.DRFactory).to.equal(DRFactory_2_10)
-
-    def test_factory_on_airflow_invalid_version(self):
-        with patch("airflow.version.version", "-1"):
-            importlib.reload(dr_factory)
-            from mwaa_dr.framework.factory.default_dag_factory import DefaultDagFactory
-
-            expect(dr_factory.DRFactory).to.equal(DefaultDagFactory)
+            expect(dr_factory.DRFactory).to.equal(factory_module)
